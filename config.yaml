@@ -1,0 +1,39 @@
+run: "model"
+
+data:
+  file_name: "data.csv"
+  exclude_columns: [
+    "year",
+    "day_of_month",
+    "forecast_datadate",
+    "forecastperiod",
+    "forecast_interval"
+  ]
+  subset_data: True
+
+model:
+  weekend_model: False
+  combined_model: True
+  separate_model: False
+  combined_model_drop_cols: [
+    "comms_and_services",
+    "space_heating",
+    "hot_water",
+    "sockets",
+    "lighting"
+  ]
+  separate_model_drop_cols: [
+    "bld_engcons"
+  ]
+
+feat_eng:
+  impute_missing: True  # linear interpolation, limit direction both
+  fxn_col_map: {
+    "bool": ["weekend", "bank_holiday"],
+    "cyclic": ["day_of_week", "month", "hour"],
+    "ohe": ["forecast_winddirection", "forecast_visibility"]
+  }
+
+assets:
+  assets_path: "assets/"
+
