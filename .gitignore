@@ -1,2 +1,2 @@
-assets\*.pkl
-assets\*\*.pkl
+*.*.pkl
+assets/*/*.pkl

@@ -7,7 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
-matplotlib.rcParams["figure.figsize"] = [32, 9]
+matplotlib.rcParams["figure.figsize"] = [40, 12]
 np.random.seed(45)
 
 class XAIModel:
@@ -30,32 +30,24 @@ class XAIModel:
             None
         """
         for target in ["car", "aob"]:
-            # plot pdp plots
-            # shap.partial_dependence_plot(
-            #     models[target]["target"],
-            #     models[target]["best"].predict,
-            #     data[target]["test"][models[target]["features"]],
-            #     ice=False,
-            #     model_expected_value =True,
-            #     feature_expected_value=True,
-            #     show=False
-            # )
-            # plt.savefig(f"assets/pdp_{target}.png")
-            breakpoint()
             plt.clf()
-            explainer = shap.Explainer(
-                models[target]["best"].predict, 
-                data[target]["val"][models[target]["features"]]
-            )
+            explainer = shap.Explainer(models[target]["best"].predict, data[target]["val"][models[target]["features"]])
             shap_values = explainer(data[target]["test"][models[target]["features"]])
             shap.plots.waterfall(shap_values[45], max_display=14, show=False)
+            plt.gcf().set_size_inches(16, 9)
             plt.savefig(f"{asset_path}/{target}/waterfall.png")
             plt.clf()
             shap.plots.bar(shap_values.abs.max(0), show=False)
+            plt.gcf().set_size_inches(16, 9)
             plt.savefig(f"{asset_path}/{target}/bar.png")
             plt.clf()
             shap.plots.beeswarm(shap_values, show=False)
+            plt.gcf().set_size_inches(16, 9)
             plt.savefig(f"{asset_path}/{target}/beeswarm.png")
+            plt.clf()
+            shap.plots.heatmap(shap_values, show=False)
+            plt.gcf().set_size_inches(16, 9)
+            plt.savefig(f"{asset_path}/{target}/heatmap.png")
             plt.clf()
             
 
