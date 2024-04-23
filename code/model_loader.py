@@ -223,7 +223,7 @@ class CombinedModel:
         """
         data = self.transform2d(data)
         models = self.train(data)
-        return models
+        return models, data
 
 
 class SeparateModel:
@@ -269,13 +269,13 @@ class ModelLoader:
             data1 = data.drop(
                 columns=self.config["combined_model_drop_cols"], axis=1)
             model_exec = CombinedModel()
-            model_exec.run(data1)
+            return model_exec.run(data1)
         elif self.config["separate_model"]:
             data1 = data.drop(
                 columns=self.config["separate_model_drop_cols"], axis=1)
             model_exec = SeparateModel()
-            model_exec.run(data1)
+            return model_exec.run(data1)
         elif self.config["weekend_model"]:
             pass
 
-        return model_exec.artifacts
+        
