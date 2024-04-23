@@ -7,7 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
-matplotlib.rcParams["figure.figsize"] = [16, 9]
+matplotlib.rcParams["figure.figsize"] = [32, 9]
 np.random.seed(45)
 
 class XAIModel:
@@ -53,5 +53,9 @@ class XAIModel:
             plt.clf()
             shap.plots.bar(shap_values.abs.max(0), show=False)
             plt.savefig(f"{asset_path}/{target}/bar.png")
+            plt.clf()
+            shap.plots.beeswarm(shap_values, show=False)
+            plt.savefig(f"{asset_path}/{target}/beeswarm.png")
+            plt.clf()
             
 
