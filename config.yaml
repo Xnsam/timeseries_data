@@ -1,5 +1,3 @@
-run: "model"
-
 data:
   file_name: "data.csv"
   exclude_columns: [
@@ -15,6 +13,9 @@ model:
   weekend_model: False
   combined_model: True
   separate_model: False
+  fs_select_combined: False
+  fs_select_weekend: False
+  fs_select_separate: False
   combined_model_drop_cols: [
     "comms_and_services",
     "space_heating",

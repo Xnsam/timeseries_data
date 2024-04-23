@@ -1,16 +1,17 @@
 from typing import Dict
 import warnings
+import os
 
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 import matplotlib
 import matplotlib.pyplot as plt
 
 from pycaret.regression import *
-import pickle
 
 # Defaults
 warnings.filterwarnings("ignore")
@@ -21,6 +22,7 @@ np.random.seed(45)
 
 class CombinedModel:
     def __init__(self):
+        self.asset_path = "assets/combined/"
         self.data_scaler = {}
         self.t_window = 5
         self.artifacts = {}
@@ -47,17 +49,6 @@ class CombinedModel:
         data["target_car"] = data[self.field_of_interest[1]].shift(1)
         self.target_cols = ["target_car", "target_aob"]
         data = data.dropna(subset=self.target_cols, axis=0)
-
-        # scale the values of total load for numerical stability and efficiency
-        # cols = self.forecast_variables + ["target_car"]
-        # self.data_scaler["car"] = MinMaxScaler()
-        # self.data_scaler["car"] = self.data_scaler["car"].fit(data[cols])
-        # data[cols] = self.data_scaler["car"].transform(data[cols])
-
-        # cols = self.forecast_variables + ["target_aob"]
-        # self.data_scaler["aob"] = MinMaxScaler()
-        # self.data_scaler["aob"] = self.data_scaler["aob"].fit(data[cols])
-        # data[cols] = self.data_scaler["aob"].transform(data[cols])
         
         final_data = {"data": data}
 
@@ -104,7 +95,7 @@ class CombinedModel:
     def transform3d(self, data) -> dict:
         pass
 
-    def plot_predictions(self, prediction: pd.DataFrame, actual: pd.DataFrame, val: str):
+    def plot_predictions(self, prediction: pd.DataFrame, actual: pd.DataFrame, val: str, save_path: str=None):
         """
         A function to plot the prediction vs actual data
 
@@ -112,6 +103,7 @@ class CombinedModel:
             prediction: pd.DataFrame: values of prediction
             actual: pd.DataFrame: values of actual data
             val: str: name of the target value
+            save_path: str: name of the save path
         
         Returns:
             None
@@ -120,20 +112,21 @@ class CombinedModel:
             None
 
         """
+        if save_path is None:
+            save_path = self.asset_path
+
         plot_data = pd.concat([prediction, actual], axis=1, ignore_index=False)
-        plot_data.plot(style=".-")
-        plt.legend(loc="center left", bbox_to_anchor=(1, 1))
-        plt.savefig(f"assets/{val}.png")
-        # plt.show()
-        plot_data[["prediction"]].plot(style=".-")
-        plt.legend(loc="center left", bbox_to_anchor=(1, 1))
-        plt.savefig(f"assets/{val}_prediction.png")
-        # plt.show()
-        plot_data[["actual"]].plot(style=".-")
-        plt.legend(loc="center left", bbox_to_anchor=(1, 1))
-        plt.savefig(f"assets/{val}_actual.png")
-        # plt.show()
-    
+        data = [plot_data, plot_data[["prediction"]], plot_data[["actual"]]]
+        path_names = [f"{save_path}/{val}/prediction_v_actual.png",
+                       f"{save_path}/{val}/prediction.png", f"{save_path}/{val}/actual.png"]
+        
+        for _data, _path_name in zip(data, path_names):
+            plt.clf()
+            _data.plot(style=".-")
+            plt.legend(loc="center left", bbox_to_anchor=(1, 1))
+            plt.xticks(rotation=45)
+            plt.savefig(_path_name)
+        
     def train(self, data:dict) -> dict:
         """
         A function to train the data model
@@ -149,62 +142,39 @@ class CombinedModel:
 
         """
         models = {}
-        numeric_features1 = list(set(data["car"]["train"].columns.to_list()) - set(["target_car"]))
-        # train for car
-        pycaret_s1 = setup(
-            data = data["car"]["train"],
-            test_data = data["car"]["val"],
-            target="target_car",
-            fold_strategy="timeseries",
-            numeric_features = numeric_features1,
-            fold=4,
-            transform_target=False,
-            session_id = 123,
-            data_split_shuffle=False,
-            fold_shuffle=False
-        )
-        best1 = pycaret_s1.compare_models(sort="MAE")
-        compare_models_csv1 = pycaret_s1.pull()
-        models["car"] = {"best": best1, "compare": compare_models_csv1, "setup": pycaret_s1, 
-                         "target": "target_car", "features": numeric_features1}
-        pycaret_s1.save_model(best1, "assets/car")
-
-        numeric_features2 = list(set(data["aob"]["train"].columns.to_list()) - set(["target_aob"]))
-        # train for car
-        pycaret_s2 = setup(
-            data = data["aob"]["train"],
-            test_data = data["aob"]["val"],
-            target="target_aob",
-            fold_strategy="timeseries",
-            numeric_features = numeric_features2,
-            fold=4,
-            transform_target=False,
-            session_id = 123,
-            data_split_shuffle=False,
-            fold_shuffle=False
-        )
-        best2 = pycaret_s2.compare_models(sort="MAE")
-        compare_models_csv2 = pycaret_s2.pull()
-        models["aob"] = {"best": best2, "compare": compare_models_csv2, "setup": pycaret_s2, 
-                         "target": "target_aob", "features": numeric_features2}
-        pycaret_s2.save_model(best2, "assets/aob")
-
+        target_vals = {"aob": "target_aob", "car": "target_car"}
         for val in ["aob", "car"]:
-            predictions = models[val]["setup"].predict_model(models[val]["best"], 
+            numeric_features1 = list(set(data[val]["train"].columns.to_list()) - set([target_vals[val]]))
+            # train for car
+            pycaret_s1 = setup(
+                data = data[val]["train"],
+                test_data = data[val]["val"],
+                target=target_vals[val],
+                fold_strategy="timeseries",
+                numeric_features = numeric_features1,
+                fold=4,
+                transform_target=False,
+                session_id = 123,
+                data_split_shuffle=False,
+                fold_shuffle=False
+            )
+            best1 = pycaret_s1.compare_models(sort="MAE")
+            compare_models_csv1 = pycaret_s1.pull()
+            models[val] = {"best": best1, "compare": compare_models_csv1, "setup": pycaret_s1, 
+                            "target": target_vals[val], "features": numeric_features1}
+            pycaret_s1.save_model(best1, f"assets/{val}")
+
+            predictions = models[val]["setup"].predict_model(models[val]["best"],
                                                              data=data[val]["test"][models[val]["features"]])
             predictions = predictions.rename(columns={"prediction_label": models[val]["target"]})
-            # cols = self.forecast_variables + [models[val]["target"]]
-            # predictions[cols] = self.data_scaler[val].inverse_transform(predictions[cols])
             test_data = data[val]["test"]
-            # test_data[cols] = self.data_scaler[val].inverse_transform(test_data[cols])
             predictions = predictions[[models[val]["target"]]].rename(columns={models[val]["target"]: "prediction"})
-            # predictions["prediction"] = np.abs(round(predictions["prediction"]))
             actual = test_data[[models[val]["target"]]].rename(columns={models[val]["target"]: "actual"})
             self.plot_predictions(predictions, actual, val)
             models[val]["compare"]["model_src"] = val
 
         csv_data = pd.concat([models["car"]["compare"], models["aob"]["compare"]], axis=0, ignore_index=True)
-        csv_data.to_csv("assets/model_comparison.csv", index=False)
+        csv_data.to_csv(f"{self.asset_path}/model_comparison.csv", index=False)
         
         return models
 
@@ -221,6 +191,7 @@ class CombinedModel:
         Return:
             models: dict
         """
+        print("running combined model")
         data = self.transform2d(data)
         models = self.train(data)
         return models, data
@@ -260,22 +231,124 @@ class WeekendModel:
         pass
 
 
+
+
+class FeatSelect:
+    def __init__(self, model_type: str):
+        self.assets_path = f"assets/{model_type}/fs"
+        if model_type == "combined":
+            self.model = CombinedModel()
+        elif model_type == "separate": 
+            self.model = SeparateModel()
+        else:
+            self.model = WeekendModel()
+    
+    def train(self, data: dict) -> dict:
+        """
+        A function to train and run the feature selection pipeline
+
+        Args:
+            data: pd.DataFrame: data to be used for
+        
+        Returns:
+            models: dict: all models after feature selection
+        
+        Raises:
+            None
+        """
+        models = {}
+        target_vals = {"aob": "target_aob", "car": "target_car"}
+        for val in ["aob", "car"]:
+            save_path = f"{self.assets_path}/{val}"
+            os.makedirs(save_path, exist_ok=True)
+            numeric_features = list(set(data[val]["train"].columns.to_list()) - set([target_vals[val]]))
+            pycaret_s = setup(
+                data=data[val]["train"],
+                test_data = data[val]["val"],
+                target=target_vals[val],
+                fold_strategy="timeseries",
+                numeric_features= numeric_features,
+                fold=4,
+                transform_target=False,
+                session_id=123,
+                data_split_shuffle=False,
+                fold_shuffle=False,
+                normalize=True,
+                normalize_method="robust",
+                polynomial_features=True,
+                feature_selection=True,
+                feature_selection_method="classic",
+                remove_multicollinearity=True,
+                low_variance_threshold=0.1
+            )
+            best = pycaret_s.compare_models(sort="MAE")
+            compare_models = pycaret_s.pull()
+            selector = pycaret_s.get_config("pipeline").named_steps["feature_selection"].transformer
+            models[val] = {
+                "best": best, "compare": compare_models, "setup": pycaret_s,
+                "target": target_vals[val], "features": numeric_features,
+                "selected_features": selector.get_feature_names_out().tolist()
+            }
+            pycaret_s.save_model(best, f"{save_path}/{val}")
+            with open(f"{save_path}/selected_features.txt", "w") as f:
+                f.write(",".join(models[val]["selected_features"]))
+            test_data = data[val]["test"]
+            predictions = pycaret_s.predict_model(best, data=test_data[numeric_features])
+            predictions = predictions.rename(columns={"prediction_label": target_vals[val]})
+            predictions = predictions[[target_vals[val]]].rename(columns={models[val]["target"]: "prediction"})
+            actual = test_data[[target_vals[val]]].rename(columns={target_vals[val]: "actual"})
+            self.model.plot_predictions(predictions, actual, val, save_path)
+            models[val]["compare"]["model_src"] = val
+        
+        csv_data = pd.concat(
+            [models["car"]["compare"], models["aob"]["compare"]], axis=0, ignore_index=True
+        )
+        csv_data.to_csv(f"{save_path}/model_comparison.csv", index=False)
+        return models
+
+
+    def run(self, data: pd.DataFrame) -> dict:
+        """
+        A function to run the pipeline
+
+        Args:
+            data: pd.DataFrame: data to be used for
+        
+        Returns:
+            models: dict: all models after feature selection
+        
+        Raises:
+            None
+        """
+        print("running feature selection model")
+        # transform the data
+        transformed_data = self.model.transform2d(data)
+        models = self.train(transformed_data)
+        return models, transformed_data
+
+
 class ModelLoader:
     def __init__(self, config: Dict):
         self.config = config["model"]
     
     def run(self, data: pd.DataFrame) -> dict:
         if self.config["combined_model"]:
-            data1 = data.drop(
-                columns=self.config["combined_model_drop_cols"], axis=1)
+            data = data.drop(columns=self.config["combined_model_drop_cols"], axis=1)
             model_exec = CombinedModel()
-            return model_exec.run(data1)
         elif self.config["separate_model"]:
-            data1 = data.drop(
-                columns=self.config["separate_model_drop_cols"], axis=1)
+            data = data.drop(columns=self.config["separate_model_drop_cols"], axis=1)
             model_exec = SeparateModel()
-            return model_exec.run(data1)
         elif self.config["weekend_model"]:
             pass
+        elif self.config["fs_select_combined"]:
+            model_exec = FeatSelect(model_type="combined")
+        elif self.config["fs_select_weekend"]:
+            model_exec = FeatSelect(model_type="weekend")
+        elif self.config["fs_select_separate"]:
+            model_exec = FeatSelect(model_type="separate")
+        
+        self.asset_path = model_exec.asset_path
+        return model_exec.run(data)
+    
 
         
