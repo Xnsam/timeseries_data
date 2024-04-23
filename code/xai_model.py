@@ -41,7 +41,7 @@ class XAIModel:
                 data[target]["val"][models[target]["features"]]
             )
             shap_values = explainer(data[target]["test"][models[target]["features"]])
-            shap.plots.waterfall(shap_values[45], max_display=14, show=False)
+            shap.plots.waterfall(shap_values[45], max_display=14, show=True)
 
             shap.plots.bar(shap_values.abs.max(0), show=False)
             
