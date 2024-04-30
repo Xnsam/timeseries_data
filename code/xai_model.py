@@ -30,21 +30,17 @@ class XAIModel:
             None
         """
         for target in ["car", "aob"]:
-            plt.clf()
             explainer = shap.Explainer(models[target]["best"].predict, data[target]["val"][models[target]["features"]])
             shap_values = explainer(data[target]["test"][models[target]["features"]])
             shap.plots.waterfall(shap_values[45], max_display=14, show=False)
             plt.gcf().set_size_inches(16, 9)
             plt.savefig(f"{asset_path}/{target}/waterfall.png")
-            plt.clf()
             shap.plots.bar(shap_values.abs.max(0), show=False)
             plt.gcf().set_size_inches(16, 9)
             plt.savefig(f"{asset_path}/{target}/bar.png")
-            plt.clf()
             shap.plots.beeswarm(shap_values, show=False)
             plt.gcf().set_size_inches(16, 9)
             plt.savefig(f"{asset_path}/{target}/beeswarm.png")
-            plt.clf()
             shap.plots.heatmap(shap_values, show=False)
             plt.gcf().set_size_inches(16, 9)
             plt.savefig(f"{asset_path}/{target}/heatmap.png")

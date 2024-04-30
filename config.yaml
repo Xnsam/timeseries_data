@@ -11,9 +11,9 @@ data:
 
 model:
   weekend_model: False
-  combined_model: True
+  combined_model: False
   separate_model: False
-  fs_select_combined: False
+  fs_select_combined: True
   fs_select_weekend: False
   fs_select_separate: False
   combined_model_drop_cols: [

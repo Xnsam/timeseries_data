@@ -114,11 +114,12 @@ class CombinedModel:
         """
         if save_path is None:
             save_path = self.asset_path
-
+            save_path = f"{save_path}/{val}"
+        
         plot_data = pd.concat([prediction, actual], axis=1, ignore_index=False)
         data = [plot_data, plot_data[["prediction"]], plot_data[["actual"]]]
-        path_names = [f"{save_path}/{val}/prediction_v_actual.png",
-                       f"{save_path}/{val}/prediction.png", f"{save_path}/{val}/actual.png"]
+        path_names = [f"{save_path}/prediction_v_actual.png",
+                       f"{save_path}/prediction.png", f"{save_path}/actual.png"]
         
         for _data, _path_name in zip(data, path_names):
             plt.clf()
@@ -231,8 +232,6 @@ class WeekendModel:
         pass
 
 
-
-
 class FeatSelect:
     def __init__(self, model_type: str):
         self.assets_path = f"assets/{model_type}/fs"
@@ -324,6 +323,9 @@ class FeatSelect:
         # transform the data
         transformed_data = self.model.transform2d(data)
         models = self.train(transformed_data)
+
+        # transform test data
+
         return models, transformed_data
 
 
@@ -347,7 +349,7 @@ class ModelLoader:
         elif self.config["fs_select_separate"]:
             model_exec = FeatSelect(model_type="separate")
         
-        self.asset_path = model_exec.asset_path
+        self.asset_path = model_exec.assets_path
         return model_exec.run(data)
     
 

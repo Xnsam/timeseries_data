@@ -1,1 +1,1 @@
-car_chargers,sine_day_of_week car_chargers,cos_day_of_week car_chargers,forecast_windspeed car_chargers,sine_hour car_chargers,car_chargers cos_hour,car_chargers VG,car_chargers forecast_uvindex
+car_chargers,car_chargers lighting,car_chargers forecast_uvindex,car_chargers sine_day_of_week,car_chargers VG,car_chargers cos_hour,car_chargers sine_hour,car_chargers forecast_windspeed

@@ -1,1 +1,1 @@
-bld_engcons,forecast_temperature lighting,comms_and_services cos_month,comms_and_services sine_hour,sine_hour space_heating,cos_hour space_heating,cos_hour forecast_feelslike,lighting space_heating
+bld_engcons,lighting forecast_temperature,lighting space_heating,cos_month comms_and_services,comms_and_services sine_hour,space_heating cos_hour,space_heating sine_hour,forecast_feelslike cos_hour
