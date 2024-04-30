@@ -1,3 +1,4 @@
 *.*.pkl
-assets/*/*.pkl
+assets/*.pkl
+assets/combined/*/*/*.pkl
 data/
