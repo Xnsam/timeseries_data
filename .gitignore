@@ -1,2 +1,3 @@
 *.*.pkl
 assets/*/*.pkl
+data/
