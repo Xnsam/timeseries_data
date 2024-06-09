@@ -32,11 +32,13 @@ def calculate_norm_rmse(actual, predicted, min_max=False) -> float:
     return norm_score
     
 def calculate_mase(actual, predicted):
-    values = []
     return round(np.mean([
         np.abs(actual[i] - predicted[i]) / (np.abs(actual[i] - actual[i - 1]) / len(actual) - 1)
         for i in range(1, len(actual))
     ]), 2)
+
+def calculate_median_ape(actual, predicted):
+    pass
 
 def cal_metrics(actual, predictions):
     perf_metrics = pd.DataFrame({
@@ -154,7 +156,7 @@ def first_preprocess(data, data_path):
     data['time'] = pd.to_datetime(data['time'], format='mixed')
     data = data.rename(columns={"time": "datetime"})
     data = data.set_index("datetime")
-    data = data.asfreq("H")
+    data = data.asfreq("h")
     
     # subset the dataset to load only the post covid dataset
     data = data[data.index >= "2021-01-01"]
