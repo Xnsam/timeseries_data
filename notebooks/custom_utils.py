@@ -114,30 +114,34 @@ def feature_engineer(data, data_path):
     data["week_of_year"] = data.index.isocalendar().week
 
     # sunlight features
-    location = LocationInfo(
-        "Swansea",
-        "United Kingdom",
-        latitude=51.6066,  # Latitude of Swansea
-        longitude=-3.9689,   # Longitude of Swansea
-        timezone="Europe/London"  # Timezone for Swansea (same as London)
-    )
-    data["sunrise_hour"] = [
-        sun(location.observer, date=date, tzinfo=location.timezone)['sunrise'].hour
-        for date in data.index
-    ]
+    # location = LocationInfo(
+    #     "Swansea",
+    #     "United Kingdom",
+    #     latitude=51.6066,  # Latitude of Swansea
+    #     longitude=-3.9689,   # Longitude of Swansea
+    #     timezone="Europe/London"  # Timezone for Swansea (same as London)
+    # )
+    # data["sunrise_hour"] = [
+    #     sun(location.observer, date=date, tzinfo=location.timezone)['sunrise'].hour
+    #     for date in data.index
+    # ]
 
-    data["sunset_hour"] = [
-        sun(location.observer, date=date, tzinfo=location.timezone)['sunrise'].hour
-        for date in data.index
-    ]
+    # data["sunset_hour"] = [
+    #     sun(location.observer, date=date, tzinfo=location.timezone)['sunrise'].hour
+    #     for date in data.index
+    # ]
 
-    data["daylight_hours"] = data["sunset_hour"] - data["sunrise_hour"]
-    data['is_daylight'] = np.where((data.index.hour >= data['sunrise_hour']) & 
-      (data.index.hour < data['sunset_hour']), 1, 0)
+    # data["daylight_hours"] = data["sunset_hour"] - data["sunrise_hour"]
+    # data['is_daylight'] = np.where((data.index.hour >= data['sunrise_hour']) & 
+    #  (data.index.hour < data['sunset_hour']), 1, 0)
 
     # cyclic transformations
     denom_map = {
-        "hour": 24, "month": 12, "day_of_week": 7, "forecast_winddirection": 360, "sunrise_hour": 24, "sunset_hour": 24
+        "hour": 24, 
+        # "month": 12, 
+        # "day_of_week": 7, 
+        "forecast_winddirection": 360, 
+        # "sunrise_hour": 24, "sunset_hour": 24
     }
     for col_name in denom_map:
         data[f"sine_{col_name}"] = np.sin(2 * np.pi * data[col_name] / denom_map[col_name])
