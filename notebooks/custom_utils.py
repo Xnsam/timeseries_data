@@ -5,6 +5,7 @@ from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error,
 from sklearn.preprocessing import StandardScaler
 from astral import LocationInfo
 from astral.sun import sun
+from sklearn.preprocessing import SplineTransformer
 
 
 def calculate_smape(actual, predicted) -> float: 
@@ -68,6 +69,30 @@ def create_std_scaler(data, column_name):
     })
     print(scaling_info)
     return data_scaler, transformed_data[column_name]
+
+
+def periodic_spline_transformer(period, n_splines=None, degree=3):
+    if n_splines is None:
+        n_splines = period
+    n_knots = n_splines + 1  # periodic and include_bias is True
+    return SplineTransformer(
+        degree=degree,
+        n_knots=n_knots,
+        knots=np.linspace(0, period, n_knots).reshape(n_knots, 1),
+        extrapolation="periodic",
+        include_bias=True,
+    )
+
+# Apply Spline Transformation
+def apply_spline_transformer(df, column, period):
+    spline_transformer = periodic_spline_transformer(period)
+    transformed_values = spline_transformer.fit_transform(df[[column]])
+    
+    # Create new column names for the transformed features
+    transformed_cols = [f"{column}_spline_{i}" for i in range(transformed_values.shape[1])]
+    df[transformed_cols] = transformed_values
+    
+    return df
 
 
 def feature_engineer(data, data_path):
@@ -138,8 +163,8 @@ def feature_engineer(data, data_path):
     # cyclic transformations
     denom_map = {
         "hour": 24, 
-        # "month": 12, 
-        # "day_of_week": 7, 
+        "month": 12, 
+        "day_of_week": 7, 
         "forecast_winddirection": 360, 
         # "sunrise_hour": 24, "sunset_hour": 24
     }
@@ -147,8 +172,13 @@ def feature_engineer(data, data_path):
         data[f"sine_{col_name}"] = np.sin(2 * np.pi * data[col_name] / denom_map[col_name])
         data[f"cos_{col_name}"] = np.cos(2 * np.pi * data[col_name] / denom_map[col_name])
 
+    # spline transformations
+    for col in list(denom_map.keys())[:-1]:
+        data = apply_spline_transformer(data, col, denom_map[col])
+
     # drop the raw columns used for encoded columns
     data = data.drop(columns=list(denom_map.keys()))
+
     return data
 
 
